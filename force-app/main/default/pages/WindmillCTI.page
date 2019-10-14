@@ -1,0 +1,272 @@
+<apex:page showHeader="false">
+	<apex:remoteObjects jsNamespace="RemoteObjectModel">
+        <apex:remoteObjectModel name="Contact" fields="Id, Phone, Name"/>
+    </apex:remoteObjects>
+    <apex:includeLightning />
+    <apex:includeScript value="{!URLFOR($Resource.sip, 'sip-0.10.0.js')}"/>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/support/api/42.0/lightning/opencti.js"></script>
+    
+	<div id="messages"></div>
+    <div>
+		<input type="text" id="kakaoSendMessage" style="display:none"/>
+	</div>
+	<script type="text/javascript">
+	/*
+		var kakaoMessage;
+		var name = "";
+		var phoneNo = "";
+		var webSocket = new WebSocket('wss://cti.nimuno.kr/kakaoMessage/jipp');
+			//new WebSocket('ws://localhost:8080/kakaoMessage/jipp');
+
+		webSocket.onerror = function(event) {
+			onError(event)
+		};
+
+		webSocket.onopen = function(event) {
+			onOpen(event)
+		};
+
+		webSocket.onmessage = function(event) {
+			onMessage(event)
+		};
+
+		function onMessage(event) {
+			console.log('event.data');
+			console.log(event.data);
+			kakaoMessage = JSON.parse(event.data);
+			var contact = new RemoteObjectModel.Contact();
+			if(kakaoMessage.phoneNo && phoneNo != kakaoMessage.phoneNo){
+				phoneNo = kakaoMessage.phoneNo;
+				contact.retrieve({where: {Phone : {eq: kakaoMessage.phoneNo }}}, function(err, records, event){
+					console.log('records');
+					console.log(records);
+					console.log('records[0]');
+					console.log(records[0]);
+					console.log('records[0].Id');
+					console.log(records[0].get('Id'));
+	                if(err) {
+	                	alert('onMessage() - '+err.message);
+	                }else if(records.length > 0){
+	                	var Id = records[0].get('Id');
+	                	name = records[0].get('Name');
+	                	sforce.opencti.screenPop({
+				    		type : sforce.opencti.SCREENPOP_TYPE.SOBJECT,
+				    		params : { recordId : Id },
+				    		callback : function(response) {
+				    			sforce.opencti.setSoftphonePanelVisibility({
+					                visible : true
+					            });
+								console.log('kakaoMessage');
+								console.log(kakaoMessage);
+								document.getElementById('messages').innerHTML 
+									+= '<br /> ' + name + ' : ' + kakaoMessage.content;
+								jQuery('#kakaoSendMessage').show();
+				    		}
+				    	})
+	                }
+	            });
+			}else if(kakaoMessage.phoneNo){
+				document.getElementById('messages').innerHTML 
+					+= '<br /> ' + name + ' : ' + kakaoMessage.content;
+			}else{
+				document.getElementById('messages').innerHTML 
+					+= '<br /> message : ' + kakaoMessage.content;
+			}
+			jQuery('html, body').scrollTop($(document).height());
+            
+			
+			
+		}
+
+		function onOpen(event) {
+			//document.getElementById('messages').innerHTML = 'Connection established';
+		}
+
+		function onError(event) {
+			alert(event.data);
+		}
+
+		var input = jQuery('#kakaoSendMessage');
+		input.keyup(function (event) {
+			if(event.keyCode == '13' ){
+	    		kakaoMessage.message = input.val();
+	    		console.log('JSON.stringify(kakaoMessage)');
+	    		console.log(JSON.stringify(kakaoMessage));
+				webSocket.send(JSON.stringify(kakaoMessage));
+				input.val('');
+				document.getElementById('messages').innerHTML 
+				+= '<br /> out : ' + kakaoMessage.message;
+				jQuery('html, body').scrollTop($(document).height());
+	        }
+		});
+		*/
+	</script>
+	
+	
+	
+    <audio id="remoteAudio" style="display:none;"></audio>
+    <div id="lightning"></div>
+	<iframe id="ringfm" style="display:none;"></iframe>
+	
+    <script type="text/javascript">
+        var component;
+        var ring        = jQuery("#ringfm");
+        var isIncomming = false;
+        
+        function jsStartRinging(srcUrl){
+            var str = '<audio loop="loop" autoplay="true" src="' + srcUrl + '"></audio>';
+            ring.contents().find("body").html(str);
+        }
+        
+        function jsStopRinging(msg, c_type, t_type){
+            isIncomming = false;
+            ring.contents().find("body").html('');
+            if(!c_type)type = 'c:windPhonePanel';
+            if(!t_type)type = 'normal';
+            component.getEvent('renderPanel').setParams({
+    			type : c_type,
+    			toast : {'type': t_type, 'message': 'Call ' + msg + '.'},
+    			attributes : { presence : 'Available'}
+    		}).fire();
+        }
+        
+        var options = {
+            media: {
+                remote:{
+                    audio: document.getElementById('remoteAudio'),
+                    video: false
+                }
+            },
+            /*
+            SIP 서버 및 포트 :    117.52.82.243  /  6030
+			SIP 계정 및 비번 :    7001 ~ 7004 /    090909
+			 계정별 070번호 :     07047681411 ~ 07047681414     (끝자리로 매칭하시면 됩니다. )
+			WebRTC  관련 포트 :  5066, 7443
+			
+			 내선간 통화는 내선번호 7000번대 (SIP번호)로 사용하시면 되구.
+			 외부번호는 070 번호 사용하시면 됩니다.
+            */
+            ua: {
+                uri: '7004@wisecontact.windmillsoft.kr',
+                wsServers:  ['wss://wisecontact.windmillsoft.kr:7443'],
+                register: true,
+                authorizationUser: '7004',
+                password: '090909'
+            }
+            /*
+            ua: {
+                uri: '1001@wisecontactdev.windmillsoft.kr',
+                wsServers:  ['wss://wisecontactdev.windmillsoft.kr:7443'],
+                register: true,
+                authorizationUser: '1001',
+                password: 'windmill13'
+            }
+            */
+        };
+
+        var simple = new SIP.WebRTC.Simple(options);
+        window.conn = simple;
+        simple.on('ringing', function() {
+            isIncomming = true;
+            sforce.opencti.setSoftphonePanelVisibility({
+                visible : true
+            });
+            console.log('window.conn ============================================================================');
+            console.log(window.conn);
+            component.getEvent('incommingCall').setParams({
+                conn: ''
+            }).fire();
+            //jsStartRinging("{!URLFOR($Resource.sip, 'rings/oldphone-mono.wav')}");
+            jsStartRinging("{!URLFOR($Resource.sip, 'rings/leaving_dreams.mkv')}");
+        });
+        
+        simple.on('new', function() {
+            console.log('new >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            simple.session.on('directionChanged', function() {
+                console.log('session directionChanged >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+                if(!isIncomming){
+                    jsStartRinging("{!URLFOR($Resource.sip, 'rings/leaving_dreams.mkv')}");
+                }
+            });
+            simple.session.on('progress', function() {
+                console.log('session progress >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('accepted', function() {
+                console.log('session accepted >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+                jsStopRinging('accepted');
+            });
+            simple.session.on('rejected', function() {
+                console.log('session rejected >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+                jsStopRinging('rejected', 'c:windPhonePanel', 'warning');
+            });
+            simple.session.on('failed', function() {
+                console.log('session failed >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('terminated', function() {
+                console.log('session terminated >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('cancel', function() {
+                console.log('session cancel >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+                jsStopRinging('canceled', 'c:windPhonePanel', 'warning');
+            });
+            simple.session.on('reinvite', function() {
+                console.log('session reinvite >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('referRequested', function() {
+                console.log('session referRequested >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('replaced', function() {
+                console.log('session replaced >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('dtmf', function() {
+                console.log('session dtmf >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('trackAdded', function() {
+                console.log('session trackAdded >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+            simple.session.on('bye', function() {
+                console.log('session bye >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            });
+        });
+        simple.on('registered', function() {
+            console.log('registered >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('unregistered', function() {
+            console.log('unregistered >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('connecting', function() {
+            console.log('connecting >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('connected', function() {
+            console.log('connected >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+            //jsStopRinging('connected', 'c:connenctedPanel');
+        });
+        simple.on('ended', function() {
+            console.log('ended >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('hold', function() {
+            console.log('hold >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('unhold', function() {
+            console.log('unhold >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        simple.on('mute', function() {
+            console.log('mute >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
+        });
+        
+        $Lightning.use("c:windAdapterOut", function() {
+            $Lightning.createComponent("c:windAdapter", 
+            {},
+            "lightning",
+            function(cmp) {
+                component = cmp;
+                checkCmp();
+            });
+        });
+        
+        function checkCmp(){
+            
+        }
+    </script>
+</apex:page>

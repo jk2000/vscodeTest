@@ -1,0 +1,14 @@
+<aura:component implements="flexipage:availableForAllPageTypes" extensible="true" >
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' wss"/>
+    <ltng:require scripts="{!join(','
+                            ,$Resource.sip + '/sip-0.10.0.js'
+                            )}"
+                  afterScriptsLoaded="{!c.doCommonInit}"
+				/>
+	<div>jip</div>
+	<audio id="remoteAudio" style="display:none;"></audio>
+	
+	<aura:attribute name="simple" type="Object" />
+	
+	{!v.body}
+</aura:component>

@@ -1,0 +1,9 @@
+<apex:page standardController="Favorite__c" showHeader="false" sidebar="false" >
+    <apex:pageBlock >
+        <apex:pageBlockSection columns="2">
+            <apex:repeat value="{!$ObjectType.Favorite__c.FieldSets.A1}" var="f"> 
+                <apex:outputField value="{!Favorite__c[f]}" />
+            </apex:repeat>
+        </apex:pageBlockSection>
+    </apex:pageBlock>
+</apex:page>

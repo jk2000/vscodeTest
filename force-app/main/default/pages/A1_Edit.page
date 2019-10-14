@@ -1,0 +1,15 @@
+<apex:page standardController="Favorite__c" showHeader="false" sidebar="false">
+    <apex:form >
+    
+        <apex:pageBlock title="test" mode="view">
+            <apex:pageBlockButtons >
+                <apex:commandButton action="{!save}" value="Save"/>
+            </apex:pageBlockButtons>
+            <apex:pageBlockSection title="test" columns="2">
+                <apex:repeat value="{!$ObjectType.Favorite__c.FieldSets.A1}" var="f"> 
+                    <apex:inputField value="{!Favorite__c[f]}" />
+                </apex:repeat>
+            </apex:pageBlockSection>
+        </apex:pageBlock>
+    </apex:form>
+</apex:page>
